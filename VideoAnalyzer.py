@@ -11,7 +11,6 @@ class VideoAnalyzer:
     __box_amount = 2
     __new_showed = False
     __task_type = 0
-    __fps = 0
     __output_video_name = ""
 
     def __init__(self, model_path):
@@ -43,15 +42,8 @@ class VideoAnalyzer:
         model = YOLO(self.model_path)
         video_name = self.__output_video_name
         cap = cv2.VideoCapture(self.__video_path)
+        video = cv2.VideoWriter(video_name, 0, 1, (int(640), int(640)))
 
-        width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-        height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-        self.__fps = cap.get(cv2.CAP_PROP_FPS)
-        print(self.__fps)
-
-
-
-        video = cv2.VideoWriter(video_name, 0, 1, (int(width), int(height)))
         i = 0
         while cap.isOpened():
 
@@ -61,12 +53,13 @@ class VideoAnalyzer:
                 break
             if i % 30 != 0:
                 continue
+
+            frame = cv2.resize(frame, (640, 640))
             frame_time = cap.get(cv2.CAP_PROP_POS_MSEC)
             results = model.track(frame, classes=(0, 1, 3), verbose=False, tracker="botsort.yaml")
-            for result in results:
-                boxes = result.boxes
-                temp_frame = self.__get_marked_frame(boxes, frame, frame_time)
-                video.write(frame)
+            boxes = results[0].boxes
+            frame = self.__get_marked_frame(boxes, frame, frame_time)
+            video.write(frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
@@ -117,10 +110,10 @@ class VideoAnalyzer:
             self.__box_amount -= 12
 
     def __intersects(self, other_x_min, other_x_max, other_y_min, other_y_max):
-        x_min = 770
-        x_max = 1024
-        y_min = 200
-        y_max = 400
+        x_min = 490
+        x_max = 580
+        y_min = 140
+        y_max = 250
         return not (x_max < other_x_min
                     or x_min > other_x_max
                     or y_max < other_y_min
